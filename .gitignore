@@ -1,0 +1,12 @@
+.gradle
+.idea
+build
+out
+
+
+!/**/.gitkeep
+
+
+geolife-data-2
+
+stats-out
