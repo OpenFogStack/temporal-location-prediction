@@ -2,20 +2,18 @@ package me.mbe.prp.simulation.stats
 
 import com.floern.castingcsv.typeadapter.CsvTypeAdapter
 import me.mbe.prp.base.DateTimeAdapter
-import me.mbe.prp.base.writeCsv
 import me.mbe.prp.simulation.state.Node
 import me.mbe.prp.simulation.state.User
 import me.mbe.prp.simulation.state.WorldState
 import java.time.Instant
-import java.time.OffsetDateTime
-import java.util.LinkedList
+import java.util.*
 
-class NextNodeStatsCollector : BaseStatsCollector() {
+open class NextNodeStatsCollector : BaseStatsCollector() {
 
-    private val stats: MutableMap<String, StatsPerUser> = LinkedHashMap()
+    protected open val includeStarts = false
+    protected val stats: MutableMap<String, StatsPerUser> = LinkedHashMap()
 
-
-    private class StatsPerUser {
+    protected class StatsPerUser {
         var lastNode: Node? = null
         var noNext: Int = 0
         var noNextCorrect: Int = 0
@@ -23,11 +21,11 @@ class NextNodeStatsCollector : BaseStatsCollector() {
     }
 
     data class StatsOverTime(
-        @CsvTypeAdapter(DateTimeAdapter::class) val time: Instant,
-        val noNext: Int,
-        val noNextCorrect: Int,
+            @CsvTypeAdapter(DateTimeAdapter::class) val time: Instant,
+            val noNext: Int,
+            val noNextCorrect: Int,
 
-        val nodeID: String,
+            val nodeID: String,
     )
 
     override fun printStats(simName: String) {
@@ -49,10 +47,10 @@ class NextNodeStatsCollector : BaseStatsCollector() {
         println()
     }
 
-    override fun collect(user: User, state: WorldState, closestNode: Node) {
+    override fun onNewPosition(user: User, state: WorldState, closestNode: Node) {
         val obj = stats.getOrPut(user.name, { StatsPerUser() })
         val found = state.isKeygroupMember(state.keyGroups[user.name]!!, closestNode)
-        if (obj.lastNode != null && obj.lastNode != closestNode) {
+        if ((obj.lastNode != null || includeStarts) && obj.lastNode != closestNode) {
             obj.noNext++
             if (found) {
                 obj.noNextCorrect++
@@ -61,5 +59,9 @@ class NextNodeStatsCollector : BaseStatsCollector() {
         }
         obj.lastNode = closestNode
     }
+
+    override fun onStartTrip(user: User, state: WorldState) {}
+
+    override fun onEndTrip(user: User, state: WorldState) {}
 
 }

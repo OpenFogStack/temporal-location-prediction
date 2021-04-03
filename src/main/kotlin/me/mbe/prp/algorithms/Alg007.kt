@@ -1,22 +1,24 @@
 package me.mbe.prp.algorithms
 
 import me.mbe.prp.base.Algorithm
+import me.mbe.prp.simulation.Simulation
 import me.mbe.prp.simulation.state.Node
 import me.mbe.prp.simulation.state.User
 import me.mbe.prp.simulation.state.WorldState
-import java.time.Instant
 import java.util.*
 
 
-//could be replaced by external knowledge on neighboring nodes
+//could be replaced by external knowledge on neighboring nodes: see Alg008
 val transitionTable = TransitionTable<Node, Node>(topN = Int.MAX_VALUE)
 
 
-class Alg007(user: User) : Algorithm(user) {
+class Alg007(user: User, sim: Simulation) : Algorithm(user, sim) {
 
     var lastNode: Node? = null
 
-    override fun doWork(state: WorldState): Instant {
+    override fun onStartTrip(state: WorldState) {}
+
+    override fun onNewPosition(state: WorldState) {
         val correctMembers = LinkedList<Node?>()
         val kg = getKeyGroup(state)
         val closestNode = state.getClosestNode(user)
@@ -36,7 +38,11 @@ class Alg007(user: User) : Algorithm(user) {
 
         lastNode = closestNode
         state.setKeygroupMembers(kg, correctMembers)
-        return state.time.plus(SECOND)
+    }
+
+    override fun onEndTrip(state: WorldState) {
+        val kg = getKeyGroup(state)
+        state.setKeygroupMembers(kg, listOf())
     }
 
 }

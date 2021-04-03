@@ -38,21 +38,15 @@ fun parseGeolifeFile(file: File): Sequence<SpaceTimeLocation> {
 
 fun parseGeolifeUser(
     userDir: String,
-    transformation: (Sequence<SpaceTimeLocation>) -> Sequence<SpaceTimeLocation> = { it }
 ): Sequence<SpaceTimeLocation> {
-    return transformation(
-        File(userDir).walk()
-            .filterNot { it.isDirectory }
-            .filter { it.extension == "plt" }
-            .sortedBy { it.name }
-            .flatMap { parseGeolifeFile(it) }
-    )
+    return File(userDir).walk()
+        .filterNot { it.isDirectory }
+        .filter { it.extension == "plt" }
+        .sortedBy { it.name }
+        .flatMap { parseGeolifeFile(it) }
 }
 
-fun parseGeolifeUserFST(
-    fileName: String,
-    transformation: (Sequence<SpaceTimeLocation>) -> Sequence<SpaceTimeLocation> = { it }
-): Sequence<SpaceTimeLocation> {
+fun parseGeolifeUserFST(fileName: String): Sequence<SpaceTimeLocation> {
     val f = File(fileName)
 
     val dis = DataInputStream(BufferedInputStream(f.inputStream(), MEGA_BYTE.toInt()))
@@ -94,7 +88,7 @@ fun parseGeolifeUserFST(
 
     }
 
-    return transformation(it.asSequence())
+    return it.asSequence()
 }
 
 

@@ -1,6 +1,7 @@
 package me.mbe.prp.algorithms
 
 import me.mbe.prp.base.Algorithm
+import me.mbe.prp.simulation.Simulation
 import me.mbe.prp.simulation.state.Node
 import me.mbe.prp.simulation.state.User
 import me.mbe.prp.simulation.state.WorldState
@@ -11,7 +12,7 @@ import java.util.*
 
 val MaxTimeDiff: Duration = Duration.of(5, ChronoUnit.MINUTES)
 
-class Alg009(user: User) : Algorithm(user) {
+class Alg009(user: User, sim: Simulation) : Algorithm(user, sim) {
 
     private var lastTime: Instant? = null
 
@@ -19,7 +20,9 @@ class Alg009(user: User) : Algorithm(user) {
 
     private var currentTrip = LinkedList<Step>()
 
-    override fun doWork(state: WorldState): Instant {
+    override fun onStartTrip(state: WorldState) {}
+
+    override fun onNewPosition(state: WorldState) {
         val correctMembers = LinkedList<Node?>()
         val kg = getKeyGroup(state)
         val closestNode = state.getClosestNode(user)
@@ -52,7 +55,11 @@ class Alg009(user: User) : Algorithm(user) {
         }
 
         lastTime = state.time
-        return state.time.plus(SECOND)
+    }
+
+    override fun onEndTrip(state: WorldState) {
+        val kg = getKeyGroup(state)
+        state.setKeygroupMembers(kg, listOf())
     }
 
     override fun printState() {

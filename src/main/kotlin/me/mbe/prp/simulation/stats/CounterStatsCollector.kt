@@ -23,7 +23,10 @@ class CounterStatsCollector : BaseStatsCollector() {
         }
     }
 
-    override fun collect(user: User, state: WorldState, closestNode: Node) {
+
+    override fun onStartTrip(user: User, state: WorldState) {}
+
+    override fun onNewPosition(user: User, state: WorldState, closestNode: Node) {
         val obj = stats.getOrPut(user.name, { StatsPerUser() })
         val found = state.isKeygroupMember(state.keyGroups[user.name]!!, closestNode)
         obj.noCalled++
@@ -31,5 +34,7 @@ class CounterStatsCollector : BaseStatsCollector() {
             obj.noConnectedToClosestNode++
         }
     }
+
+    override fun onEndTrip(user: User, state: WorldState) {}
 
 }

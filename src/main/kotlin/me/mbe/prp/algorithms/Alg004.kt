@@ -1,9 +1,10 @@
 package me.mbe.prp.algorithms
 
+import me.mbe.prp.simulation.Simulation
 import me.mbe.prp.simulation.state.Node
 import me.mbe.prp.simulation.state.User
 
-open class Alg004(user: User, noLastNodes: Int = 2, topN: Int = 1) : Alg003(user, noLastNodes) {
+open class Alg004(user: User, sim: Simulation, noLastNodes: Int = 2, topN: Int = 1) : Alg003(user, sim, noLastNodes) {
     override val transitionTable = SmartTransitionTable<Node>(noLastNodes, topN)
 
     override fun printState() {

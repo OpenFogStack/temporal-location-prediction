@@ -3,6 +3,7 @@ package me.mbe.prp
 import me.mbe.prp.base.AlgorithmConstructor
 import me.mbe.prp.base.Location
 import me.mbe.prp.base.SpaceTimeLocation
+import me.mbe.prp.simulation.AnnotatedSpaceTimeLocation
 import me.mbe.prp.simulation.data.*
 import me.mbe.prp.simulation.helpers.GridNodeGetter
 import me.mbe.prp.simulation.helpers.NodesGetter
@@ -58,27 +59,28 @@ val defaultStatsCollector = {
         CounterStatsCollector(),
         TimeStatsCollector(),
         NextNodeStatsCollector(),
+        NextNodeWithStartStatsCollector(),
         WrongNodeTimeStatsCollector(),
     )
 }
 
 fun getUserLocs(
     positionLogFiles: List<String>,
-    fn: (String) -> Sequence<SpaceTimeLocation>
-): Map<String, Iterator<SpaceTimeLocation>> {
+    fn: (String) -> Sequence<AnnotatedSpaceTimeLocation>
+): Map<String, Iterator<AnnotatedSpaceTimeLocation>> {
     return positionLogFiles
         .associate { Pair(Paths.get(it).fileName.toString(), fn(it).iterator()) }
         .filter { it.value.hasNext() } //ignore empty users - should not happen
 }
 
-fun getUserLocsGeoLife(positionLogFiles: List<String>): Map<String, Iterator<SpaceTimeLocation>> {
+fun getUserLocsGeoLife(positionLogFiles: List<String>): Map<String, Iterator<AnnotatedSpaceTimeLocation>> {
     return getUserLocs(positionLogFiles) {
-        parseGeolifeUser(it) {
+        parseGeolifeUser(it)
             // it.windowed(5, transform = List<SpaceTimeLocation>::average)
-            it
-        }
+            .map { AnnotatedSpaceTimeLocation(it, false, false) }
     }
 }
+
 
 private fun List<SpaceTimeLocation>.average(): SpaceTimeLocation {
     return SpaceTimeLocation(
@@ -92,30 +94,63 @@ private fun List<SpaceTimeLocation>.average(): SpaceTimeLocation {
 
 val MINUTES_5 = Duration.of(5, ChronoUnit.MINUTES)!!
 
-fun getUserLocsGeoLifeFST(positionLogFiles: List<String>): Map<String, Iterator<SpaceTimeLocation>> {
-    return getUserLocs(positionLogFiles) {
-        parseGeolifeUserFST(it) {
-            //it.windowed(5, transform = List<SpaceTimeLocation>::average)
-            //it
-            it.zipWithNext { a, b ->
-                val tDiff = Duration.between(a.time, b.time)
-                if ( tDiff > MINUTES_5) {
-                    val sDiff = a.location.distance(b.location) / 1000 // in km
-                    if (sDiff > 1) {
-                        println("jump from ${a.time}: ${a.location.latitudeDeg}, ${a.location.longitudeDeg} to ${b.time}: ${b.location.latitudeDeg}, ${b.location.longitudeDeg} ($tDiff, $sDiff km)")
-                    } else {
-                        println("jump from ${a.time} to ${b.time}: $tDiff")
-                    }
+fun getUserLocsGeoLifeFST(positionLogFiles: List<String>): Map<String, Iterator<AnnotatedSpaceTimeLocation>> {
+    return getUserLocs(positionLogFiles) { userName ->
+        var online = false
+
+        var last: SpaceTimeLocation? = null //to not ignore the last; would be ignored by zipWithNext
+
+        val q = parseGeolifeUserFST(userName)
+            .zipWithNext { current, next ->
+                last = next
+
+                var beginOfTrip = false
+                var endOfTrip = false
+
+                if (!online) {
+                    online = true
+                    beginOfTrip = true
                 }
-                a
+
+                if (Duration.between(current.time, next.time) > MINUTES_5) {
+                    online = false
+                    endOfTrip = true
+                }
+
+                return@zipWithNext AnnotatedSpaceTimeLocation(current, beginOfTrip, endOfTrip)
+            }
+            .plus(sequence { yield(AnnotatedSpaceTimeLocation(last!!, !online, true)) })
+
+        //to make sure everything is in order
+        var onlineCheck = false
+        q.onEach {
+            if (it.beginOfTrip) {
+                if (onlineCheck) throw RuntimeException(userName)
+                onlineCheck = true
+            }
+
+            if (!onlineCheck) throw RuntimeException(userName)
+
+            if (it.endOfTrip) {
+                if (!onlineCheck) throw RuntimeException(userName)
+                onlineCheck = false
             }
         }
     }
+
 }
 
 
-fun getUserLocsShanghai(positionLogFiles: List<String>): Map<String, Iterator<SpaceTimeLocation>> {
-    return getUserLocs(positionLogFiles, ::parseShanghaiUser)
+fun getUserLocsShanghai(positionLogFiles: List<String>): Map<String, Iterator<AnnotatedSpaceTimeLocation>> {
+    return getUserLocs(positionLogFiles) {
+        parseShanghaiUser(it).map {
+            AnnotatedSpaceTimeLocation(
+                it,
+                false,
+                false
+            )
+        } //todo: use the real time from the dataset
+    }
 }
 
 fun runSimGeoLife(
@@ -140,8 +175,8 @@ fun runSimGeoLife(
     simName: String,
     numNodes: Int = 100,
     //positionLogFiles: List<String> = positionLogFilesTestGeoLifeFST,
-    positionLogFiles: List<String> = positionLogFilesTestGeoLifeFSTSingleUser("000"),
-    //positionLogFiles: List<String> = positionLogFilesAllGeoLifeFST,
+    //positionLogFiles: List<String> = positionLogFilesTestGeoLifeFSTSingleUser("000"),
+    positionLogFiles: List<String> = positionLogFilesAllGeoLifeFST,
 ) {
     runSimGeoLife(algorithm, simName, generateNodes(numNodes), positionLogFiles)
 }
@@ -155,12 +190,9 @@ fun runSimShanghai(
     println(positionLogFiles.size)
     runSimulation(
         algorithm,
-        //::simpleLatencyCalculation,
         defaultStatsCollector(),
         ShanghaiNodesGetter(loadNodesShanghai()),
         getUserLocsShanghai(positionLogFiles),
-        //Duration.ZERO,
         simName,
-        //isShanghai = true
     )
 }

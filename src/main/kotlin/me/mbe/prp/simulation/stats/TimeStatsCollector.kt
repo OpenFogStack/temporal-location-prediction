@@ -1,14 +1,14 @@
 package me.mbe.prp.simulation.stats
 
+import me.mbe.prp.simulation.state.KeygroupMember
 import me.mbe.prp.simulation.state.Node
 import me.mbe.prp.simulation.state.User
 import me.mbe.prp.simulation.state.WorldState
 import java.time.Duration
 import java.time.Instant
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
+import kotlin.math.max
 
-val WEEK: Duration = Duration.of(7 * 24, ChronoUnit.HOURS)
 
 class TimeStatsCollector : BaseStatsCollector() {
     companion object {
@@ -18,12 +18,14 @@ class TimeStatsCollector : BaseStatsCollector() {
         }
     }
 
-
     private val stats: MutableMap<String, StatsPerUser> = LinkedHashMap()
 
 
     private class StatsPerUser {
         var lastCollect: Instant? = null
+        var lastKeygroupMember: KeygroupMember? = null
+
+
         var overAllTime: Long = 0
         var correctTime: Long = 0
     }
@@ -38,33 +40,49 @@ class TimeStatsCollector : BaseStatsCollector() {
             println()
         }
         print("User: overall; ")
-        print(
-            "AccTime: ${
-                statsOverall.correctTime.toDouble() / statsOverall.overAllTime.toDouble()
-            }; "
-        )
+        print("AccTime: ${statsOverall.correctTime.toDouble() / statsOverall.overAllTime.toDouble()}; ")
         println()
     }
 
-    override fun collect(user: User, state: WorldState, closestNode: Node) {
+    fun collect(user: User, state: WorldState, closestNode: Node?) {
         val userName = user.name
-        val obj = stats.getOrPut(userName, { StatsPerUser() })
+        val obj = stats[userName]!!
 
-        val found = state.isKeygroupMember(state.keyGroups[userName]!!, closestNode)
-
-        if (obj.lastCollect != null) {
+        if (obj.lastKeygroupMember != null) {
             val timeDiff = Duration.between(obj.lastCollect, state.time)
-            if (timeDiff > WEEK) {
-                println("${user.name}, ${obj.lastCollect}, ${state.time}, $timeDiff")
-            } else {
-                obj.overAllTime += timeDiff.seconds
-                if (found) {
-                    obj.correctTime += timeDiff.seconds
-                }
-            }
+            obj.overAllTime += timeDiff.seconds
+            obj.correctTime += listOf(obj.lastKeygroupMember!!)
+                    .filter { it.availableFrom.isBefore(state.time) }
+                    .map { max(obj.lastCollect!!.epochSecond, it.availableFrom.epochSecond) }
+                    .map { state.time.epochSecond - it }
+                    .sum()
         }
 
         obj.lastCollect = state.time
+        if (closestNode != null) {
+            obj.lastKeygroupMember = state.keyGroups[user.name]!!.members[closestNode.name]
+        } else {
+            obj.lastKeygroupMember = null
+        }
     }
+
+    override fun onStartTrip(user: User, state: WorldState) {
+        val obj = stats.getOrPut(user.name, { StatsPerUser() })
+        obj.lastCollect = state.time
+        collect(user, state, null)
+    }
+
+    override fun onNewPosition(user: User, state: WorldState, closestNode: Node) {
+        collect(user, state, closestNode)
+    }
+
+    override fun onEndTrip(user: User, state: WorldState) {
+        collect(user, state, null)
+    }
+
+    override fun onTime(user: User, state: WorldState) {
+        collect(user, state, stats[user.name]!!.lastKeygroupMember?.node /* does not change*/)
+    }
+
 
 }

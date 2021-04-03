@@ -1,35 +1,40 @@
 package me.mbe.prp.algorithms
 
 import me.mbe.prp.base.Algorithm
+import me.mbe.prp.simulation.Simulation
 import me.mbe.prp.simulation.state.Node
 import me.mbe.prp.simulation.state.User
 import me.mbe.prp.simulation.state.WorldState
-import java.time.Instant
 import java.util.*
 import kotlin.collections.LinkedHashMap
 
-class Alg002(user: User, topN: Int = 1) : Algorithm(user) {
+class Alg002(user: User, sim: Simulation, topN: Int = 1) : Algorithm(user, sim) {
     private var oldNode: Node? = null
 
     private val transitionTable = TransitionTable<Node, Node>(topN)
 
-    override fun doWork(state: WorldState): Instant {
+    override fun onStartTrip(state: WorldState) {}
+
+    override fun onNewPosition(state: WorldState) {
         val currentNode = state.getClosestNode(user)
         val kg = getKeyGroup(state)
-        if (currentNode != oldNode) {
-            val correctMembers = LinkedList<Node>()
-            correctMembers.add(currentNode)
-            if (oldNode != null) {
-                transitionTable.addTransition(oldNode!!, currentNode)
-                val nextNodes = transitionTable.getNext(currentNode)
-                if (nextNodes != null) {
-                    correctMembers.addAll(nextNodes)
-                }
-            }
-            state.setKeygroupMembers(kg, correctMembers)
-            oldNode = currentNode
+        val correctMembers = LinkedList<Node>()
+        correctMembers.add(currentNode)
+        val nextNodes = transitionTable.getNext(currentNode)
+        if (nextNodes != null) {
+            correctMembers.addAll(nextNodes)
         }
-        return state.time.plus(SECOND)
+        state.setKeygroupMembers(kg, correctMembers)
+
+        if (oldNode != null && oldNode != currentNode) {
+            transitionTable.addTransition(oldNode!!, currentNode)
+        }
+        oldNode = currentNode
+    }
+
+    override fun onEndTrip(state: WorldState) {
+        val kg = getKeyGroup(state)
+        state.setKeygroupMembers(kg, listOf())
     }
 
     override fun printState() {

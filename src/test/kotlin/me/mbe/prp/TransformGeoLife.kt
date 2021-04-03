@@ -25,10 +25,10 @@ fun transform2() {
         var lastTime: Long? = null
 
         locs.forEach {
-            dos.writeDouble(it.location.latitudeDeg)
-            dos.writeDouble(it.location.longitudeDeg)
+            dos.writeDouble(it.location.location.latitudeDeg)
+            dos.writeDouble(it.location.location.longitudeDeg)
 
-            val time = it.time.epochSecond
+            val time = it.location.time.epochSecond
 
             dos.writeLong(time)
 

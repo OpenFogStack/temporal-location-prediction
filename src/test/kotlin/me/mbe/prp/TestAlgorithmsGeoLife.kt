@@ -11,6 +11,7 @@ class TestAlgorithmsGeoLife : TestAlgorithms() {
 
 
     @Test
+    @Ignore
     fun testAlg000() = runSimGeoLife(::Alg000, getTestName())
 
     @Test
@@ -25,13 +26,16 @@ class TestAlgorithmsGeoLife : TestAlgorithms() {
 
     @Test //should be the same as testAlg002
     @Ignore
-    fun testAlg003_1() = runSimGeoLife({ Alg003(it, noLastNodes = 1) }, getTestName())
+    fun testAlg003_1() = runSimGeoLife({ u, s -> Alg003(u, s, noLastNodes = 1) }, getTestName())
 
     @Test //should be the same as testAlg002 with global backup
     @Ignore
     fun testAlg003_1_global_backup() {
         val globalTransitionTable = TransitionTable<List<Node>, Node>(1)
-        runSimGeoLife({ Alg003(it, noLastNodes = 1, backupTransitionTable = globalTransitionTable) }, getTestName())
+        runSimGeoLife(
+            { u, s -> Alg003(u, s, noLastNodes = 1, backupTransitionTable = globalTransitionTable) },
+            getTestName()
+        )
     }
 
     @Test
@@ -45,7 +49,7 @@ class TestAlgorithmsGeoLife : TestAlgorithms() {
     @Ignore
     fun testAlg003_global_backup() {
         val globalTransitionTable = TransitionTable<List<Node>, Node>(1)
-        runSimGeoLife({ Alg003(it, backupTransitionTable = globalTransitionTable) }, getTestName())
+        runSimGeoLife({ u, s -> Alg003(u, s, backupTransitionTable = globalTransitionTable) }, getTestName())
     }
 
     @Test
@@ -57,11 +61,11 @@ class TestAlgorithmsGeoLife : TestAlgorithms() {
 
     @Test
     @Ignore
-    fun testAlg004_3_400() = runSimGeoLife({ Alg004(it, noLastNodes = 3) }, getTestName(), numNodes = 400)
+    fun testAlg004_3_400() = runSimGeoLife({ u, s -> Alg004(u, s, noLastNodes = 3) }, getTestName(), numNodes = 400)
 
     @Test
     @Ignore
-    fun testAlg004_2() = runSimGeoLife({ Alg004(it, topN = 2) }, getTestName())
+    fun testAlg004_2() = runSimGeoLife({ u, s -> Alg004(u, s, topN = 2) }, getTestName())
 
     @Test
     fun testAlg005() = runSimGeoLife(::Alg005, getTestName())
@@ -70,7 +74,7 @@ class TestAlgorithmsGeoLife : TestAlgorithms() {
     @Ignore
     fun testAlg005_3_400() {
         val globalTransitionTable = SmartTransitionTable<Node>(maxLength = 5, topN = 1)
-        runSimGeoLife({ Alg005(it, globalTransitionTable) }, getTestName(), numNodes = 900)
+        runSimGeoLife({ u, s -> Alg005(u, s, globalTransitionTable) }, getTestName(), numNodes = 900)
     }
 
     @Test
