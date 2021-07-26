@@ -1,3 +1,1 @@
-
-rootProject.name = "prp-simulation-kotlin"
-
+rootProject.name = "prp-simulation"

@@ -15,9 +15,15 @@ repositories {
 
 dependencies {
 
-    implementation("com.floern.castingcsv:casting-csv-kt:1.1")
+    // implementation("com.floern.castingcsv:casting-csv-kt:1.1")
 
-    testImplementation(kotlin("test-junit"))
+    implementation("com.github.haifengl:smile-kotlin:2.6.0")
+
+    implementation("org.openjdk.jol:jol-core:0.16")
+
+    implementation(kotlin("reflect"))
+
+    testImplementation(kotlin("test-junit5"))
 }
 
 tasks.test {

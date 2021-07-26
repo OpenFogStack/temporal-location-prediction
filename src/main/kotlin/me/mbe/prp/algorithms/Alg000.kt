@@ -1,20 +1,14 @@
 package me.mbe.prp.algorithms
 
-import me.mbe.prp.base.Algorithm
-import me.mbe.prp.simulation.Simulation
-import me.mbe.prp.simulation.state.User
-import me.mbe.prp.simulation.state.WorldState
-import java.time.Duration
-import java.time.Instant
-import java.time.temporal.ChronoUnit
+import me.mbe.prp.core.*
 
-class Alg000(user: User, sim: Simulation) : Algorithm(user, sim) {
+class Alg000(p: AlgorithmParams) : Algorithm(p) {
     override fun onStartTrip(state: WorldState) {
         val kg = getKeyGroup(state)
         state.setKeygroupMembers(kg, state.nodes.nodes)
     }
 
-    override fun onNewPosition(state: WorldState) {}
-
-    override fun onEndTrip(state: WorldState) {}
+    override fun computeSize(): Capacity {
+        return ZERO_BYTE
+    }
 }

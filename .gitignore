@@ -4,9 +4,9 @@ build
 out
 
 
+geolife-data/*
+geolife-data-transformed/*
+stats-out/*
+
+
 !/**/.gitkeep
-
-
-geolife-data-2
-
-stats-out

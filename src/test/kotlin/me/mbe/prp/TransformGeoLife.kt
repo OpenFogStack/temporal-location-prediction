@@ -1,23 +1,23 @@
 package me.mbe.prp
 
-import me.mbe.prp.simulation.helpers.MEGA_BYTE
+import me.mbe.prp.base.parseDateTime
+import me.mbe.prp.core.Location
+import me.mbe.prp.core.MEGA_BYTE
+import me.mbe.prp.core.SpaceTimeLocation
+import me.mbe.prp.data.getAllGeolifeUsers
 import java.io.BufferedOutputStream
 import java.io.DataOutputStream
 import java.io.File
 
 
 fun main() {
-    transform2()
-}
+    File("./geolife-data-transformed/").mkdirs()
 
-fun transform2() {
-    File("./geolife-data-2/").mkdirs()
-
-    val locsIterator = getUserLocsGeoLife(positionLogFilesAllGeoLife)
+    val locsIterator = getUserLocsGeoLife(getAllGeolifeUsers("./geolife-data/Data/"))
 
     locsIterator.forEach { (u, locs) ->
         println(u)
-        val f = File("./geolife-data-2/$u.out")
+        val f = File("./geolife-data-transformed/$u.out")
         f.createNewFile()
 
         val dos = DataOutputStream(BufferedOutputStream(f.outputStream(), MEGA_BYTE.toInt()))
@@ -25,15 +25,15 @@ fun transform2() {
         var lastTime: Long? = null
 
         locs.forEach {
-            dos.writeDouble(it.location.location.latitudeDeg)
-            dos.writeDouble(it.location.location.longitudeDeg)
+            dos.writeDouble(it.location.latitudeDeg)
+            dos.writeDouble(it.location.longitudeDeg)
 
-            val time = it.location.time.epochSecond
+            val time = it.time.epochSecond
 
             dos.writeLong(time)
 
             if (lastTime != null && lastTime!! > time) {
-                run {}
+                throw IllegalStateException("time not in sequence")
             }
 
             lastTime = time
@@ -43,22 +43,29 @@ fun transform2() {
     }
 }
 
-/*
-fun transform1() {
-    File("./geolife-data/").mkdirs()
-
-    val locsIterator = getUserLocsGeoLife(positionLogFilesAllGeoLife)
-
-    locsIterator.forEach { (u, locs) ->
-        println(u)
-        val f = File("./geolife-data/$u.out")
-        f.createNewFile()
-
-        val q = locs.asSequence().toList()
-
-        val out = FSTObjectOutput(f.outputStream(), GeoLifeFSTConf)
-        out.writeObject(q, ArrayList<SpaceTimeLocation>().javaClass)
-        out.close() // required !
-    }
+fun getUserLocsGeoLife(positionLogFiles: List<String>): Map<String, Sequence<SpaceTimeLocation>> {
+    return getUserLocs(positionLogFiles) { parseGeolifeUser(it) }
 }
-*/
+
+fun parseGeolifeFile(file: File): Sequence<SpaceTimeLocation> {
+    val reader = file.bufferedReader()
+
+    val list = reader.lineSequence().drop(6).map { it.split(",") }.map { line ->
+        SpaceTimeLocation(
+            Location(line[0].toDouble(), line[1].toDouble()),
+            parseDateTime(line[5], line[6])
+        )
+    }.toList()
+
+    reader.close()
+
+    return list.asSequence()
+}
+
+fun parseGeolifeUser(userDir: String): Sequence<SpaceTimeLocation> {
+    return File(userDir).walk()
+        .filterNot { it.isDirectory }
+        .filter { it.extension == "plt" }
+        .sortedBy { it.name }
+        .flatMap { parseGeolifeFile(it) }
+}
