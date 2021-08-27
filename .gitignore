@@ -3,10 +3,7 @@
 build
 out
 
-
 geolife-data/*
 geolife-data-transformed/*
-stats-out/*
-
 
 !/**/.gitkeep
