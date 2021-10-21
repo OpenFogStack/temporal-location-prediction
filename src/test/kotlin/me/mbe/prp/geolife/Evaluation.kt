@@ -446,6 +446,20 @@ class Evaluation : EvaluationBase() {
         )
     }
 
+    @TestFactory
+    fun eval016(): List<DynamicContainer> {
+
+        return generateTests(
+            listOf("simpleNetwork_5min_100Nodes_100MB"),
+            cartesianProduct(
+                ::FusionTransitionTableConfig,
+                setOf(1, 2, 3, 4, 5),
+                setOf(listOf(1), listOf(1, 2), listOf(1, 2, 7)),
+                setOf(listOf(1), listOf(1, 4), listOf(1, 4, 12), listOf(1, 4, 24)),
+            ).map { fTT -> "Alg012_(${fTT})_(0.9_PT24H_true)" }
+        )
+    }
+
 
     @TestFactory
     fun eval_test(): List<DynamicContainer> {
