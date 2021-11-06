@@ -1,7 +1,10 @@
-from evaluation.helpers import STATS_DIR
+from helpers import STATS_DIR
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib
 
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42
 # %%
 
 ns_name = "simpleNetwork_5min_100Nodes_100MB"

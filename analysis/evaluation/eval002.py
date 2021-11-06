@@ -1,7 +1,10 @@
-from evaluation.helpers import load_value, plot_pareto_frontier
+from helpers import load_value, plot_pareto_frontier
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib
 
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42
 # %%
 
 ns_5min = "simpleNetwork_5min_100Nodes_100MB"

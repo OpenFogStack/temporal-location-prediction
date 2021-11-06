@@ -1,6 +1,9 @@
-from evaluation.helpers import load_value, get_algs, pareto_front
+from helpers import load_value, get_algs, pareto_front
 import pandas as pd
+import matplotlib
 
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42
 # %%
 
 x = []

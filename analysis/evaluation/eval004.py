@@ -1,4 +1,4 @@
-from evaluation.helpers import load_value
+from helpers import load_value
 import pandas as pd
 
 # %%

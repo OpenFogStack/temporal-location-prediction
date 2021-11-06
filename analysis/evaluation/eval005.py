@@ -1,7 +1,10 @@
-from evaluation.helpers import load_value
+from helpers import load_value
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib
 
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42
 # %%
 
 x = []
