@@ -1,20 +1,25 @@
 package me.mbe.prp.algorithms.nextnodepred
 
-import me.mbe.prp.algorithms.helpers.AverageReducer
-import me.mbe.prp.algorithms.helpers.FusionTransitionTable
-import me.mbe.prp.algorithms.helpers.FusionTransitionTableConfig
+import me.mbe.prp.algorithms.helpers.TransitionTableDurationReducer
+import me.mbe.prp.algorithms.helpers_temporal.TemporalFusionTransitionTable
+import me.mbe.prp.algorithms.helpers_temporal.TemporalFusionTransitionTableConfig
 import me.mbe.prp.core.*
 import java.time.*
 import java.util.*
 
-class Alg012(
+val TemporalSetsReducer: TransitionTableDurationReducer = { durations, weight, temporalSets, date ->
+    temporalSets!!.getPrediction(date!!)
+}
+
+// T-FOOM Algorithm from Emil Balitzki's Bachelor's Thesis
+class AlgT012(
     p: AlgorithmParams,
-    config: FusionTransitionTableConfig,
+    config: TemporalFusionTransitionTableConfig,
     eP: AlgExtensionBaseParams,
 ) : AlgExtensionBase(p, eP) {
     private val beijingZone: ZoneId = ZoneId.of("Asia/Shanghai")
 
-    private val transitionTable = FusionTransitionTable(config, eP.topN, AverageReducer, storeDuration)
+    private val transitionTable = TemporalFusionTransitionTable(config, eP.topN, TemporalSetsReducer, storeDuration)
 
     private var tripStartTimeZoned: ZonedDateTime? = null
 
@@ -32,6 +37,11 @@ class Alg012(
         correctMembers.add(Pair(currentNode,Duration.ZERO))
 
         if (lastNodes.isEmpty() || currentNode != lastNodes.last()) {
+            var date: ZonedDateTime? = null
+            if(lastSwitchTime != Instant.MIN){
+                date = lastSwitchTime.atZone(beijingZone)
+            }
+            // At the start and when the nodes are changing
             transitionTable.addTransition(
                 Triple(
                     lastNodes,
@@ -39,7 +49,9 @@ class Alg012(
                     tripStartTimeZoned!!.toLocalTime()
                 ),
                 currentNode,
+                // In addition to the duration, also pass the date
                 duration = Duration.between(lastSwitchTime, state.time),
+                date = date
             )
             lastNodes.add(currentNode)
             lastSwitchTime = state.time
@@ -51,22 +63,10 @@ class Alg012(
                 tripStartTimeZoned!!.dayOfWeek,
                 tripStartTimeZoned!!.toLocalTime(),
             ),
-            null
+            state.time.atZone(beijingZone)
         )
-
+        // Check if the loading can be started, or it is too late.
         correctMembers.addAll(getNodesWithinDuration(nextNodes, state))
-        /*
-        if (nextNodes.isNotEmpty()) {
-            correctMembers.addAll(getNodesWithinDuration(nextNodes, state))
-        } else {
-            val gNG = state.nodes as GridNodeGetter
-            if (lastNodes.size >= 2) {
-                val l = lastNodes.takeLast(2)
-                val nextNode = gNG.grid.nextInDirection(Pair(l[0], l[1]))
-                correctMembers.add(nextNode)
-            }
-        }
-        */
         state.setKeygroupMembers(kg, correctMembers)
     }
 
@@ -80,6 +80,7 @@ class Alg012(
                 ),
                 null,
                 duration = Duration.between(lastSwitchTime, state.time),
+                date = lastSwitchTime.atZone(beijingZone)
             )
         }
     }

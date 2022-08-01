@@ -8,6 +8,7 @@ import org.openjdk.jol.info.GraphLayout
 import java.time.DayOfWeek
 import java.time.Duration
 import java.time.LocalTime
+import java.time.ZonedDateTime
 import java.util.LinkedHashMap
 import kotlin.math.pow
 
@@ -47,7 +48,8 @@ class FusionTransitionTable(
         from: Triple<List<Node>, DayOfWeek, LocalTime>,
         to: Node?,
         weight: Double,
-        duration: Duration
+        duration: Duration,
+        date: ZonedDateTime?
     ) {
         transitionTables.forEach { (k, v) ->
             if (from.first.size >= k.depth) {
@@ -66,7 +68,7 @@ class FusionTransitionTable(
     }
 
     override fun getNextWithProbAllInternal(
-        from: Triple<List<Node>, DayOfWeek, LocalTime>
+        from: Triple<List<Node>, DayOfWeek, LocalTime>, date: ZonedDateTime?
     ): List<Triple<Node?, Duration, Double>> {
 
         data class TTResponse(val node: Node?, val weight: Double, val duration: Long, val prob: Double)
@@ -78,7 +80,8 @@ class FusionTransitionTable(
                         from.first.takeLast(k.depth),
                         dowSplitFn(from.second, k.dowSplitCount),
                         todSplitFn(from.third, k.todSplitCount)
-                    )
+                    ),
+                    date
                 ).map { TTResponse(it.first, weight(k), it.second.seconds, it.third) }
             }
             .groupBy { it.node }

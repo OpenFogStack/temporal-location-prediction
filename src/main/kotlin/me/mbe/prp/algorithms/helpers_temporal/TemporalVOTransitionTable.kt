@@ -1,5 +1,7 @@
-package me.mbe.prp.algorithms.helpers
+package me.mbe.prp.algorithms.helpers_temporal
 
+import me.mbe.prp.algorithms.helpers.TransitionTable
+import me.mbe.prp.algorithms.helpers.TransitionTableDurationReducer
 import me.mbe.prp.core.Capacity
 import me.mbe.prp.core.Node
 import org.openjdk.jol.info.GraphLayout
@@ -7,28 +9,30 @@ import java.time.Duration
 import java.time.ZonedDateTime
 import kotlin.math.min
 
-class VOTransitionTable(
+class TemporalVOTransitionTable(
     private val maxDepth: Int,
     topN: Double,
     reducer: TransitionTableDurationReducer,
-    storeDuration: Boolean
+    storeDuration: Boolean,
+    temporalSplit: String,
 ) : TransitionTable<List<Node>, Node?>(topN, reducer, storeDuration) {
-    private val transitionTables = LinkedHashMap<Int, TransitionTableImpl<List<Node>, Node?>>()
+    private val transitionTables = LinkedHashMap<Int, TemporalTransitionTableImpl<List<Node>, Node?>>()
 
     init {
         1.rangeTo(maxDepth).forEach { depth ->
-            transitionTables[depth] = TransitionTableImpl(topN = topN, reducer = reducer, storeDuration = storeDuration)
+            transitionTables[depth] = TemporalTransitionTableImpl(topN = topN, reducer = reducer, storeDuration = storeDuration, temporalSplit = temporalSplit)
         }
     }
 
-    override fun addTransitionInternal(lastNodes: List<Node>, currentNode: Node?, weight: Double, duration: Duration, date: ZonedDateTime?) {
+    override fun addTransitionInternal(from: List<Node>, to: Node?, weight: Double, duration: Duration, date: ZonedDateTime?) {
         transitionTables.forEach { (depth, tt) ->
-            if (lastNodes.size >= depth) {
+            if (from.size >= depth) {
                 tt.addTransition(
-                    lastNodes.takeLast(depth),
-                    currentNode,
+                    from.takeLast(depth),
+                    to,
                     weight,
-                    duration
+                    duration,
+                    date
                 )
             }
         }
