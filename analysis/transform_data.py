@@ -2,7 +2,7 @@ import pickle
 from datetime import datetime
 import os
 
-INPUT_DIR = "geolife_data\Data"
+INPUT_DIR = "geolife_data/Data"
 OUTPUT_DIR = "./geolife_data_transformed"
 
 # Make transformed data directory
@@ -30,11 +30,16 @@ for user_name in os.listdir(INPUT_DIR):
                 for line in f:
                     line = line.strip()
                     values = line.split(",")
-                    STLoc = {"lat": values[0], "long": values[1], "time": datetime.strptime(values[5] + " " + values[6], '%Y-%m-%d %H:%M:%S')}
+                    STLoc = {
+                        "lat": values[0],
+                        "long": values[1],
+                        "time": datetime.strptime(
+                            values[5] + " " + values[6], "%Y-%m-%d %H:%M:%S"
+                        ),
+                    }
                     locations.append(STLoc)
         user_data = {"userID": user_name, "locations": locations}
         output_file = os.path.join(OUTPUT_DIR, user_name) + ".pkl"
         with open(output_file, "wb") as out:
             pickle.dump(user_data, out)
         print(f"User {user_name} finished.")
-        
