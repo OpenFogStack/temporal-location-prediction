@@ -1,9 +1,12 @@
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+import matplotlib.image as mpimg
 
 mpl.rcParams["pdf.fonttype"] = 42
 mpl.rcParams["ps.fonttype"] = 42
-mpl.rcParams["figure.figsize"] = (4.5, 3)
+mpl.rcParams["figure.figsize"] = (4.5, 4.5)
 mpl.rcParams["figure.dpi"] = 100
 plt.rcParams["font.family"] = "sans-serif"
 plt.rcParams["font.sans-serif"] = ["CMU Sans Serif"]
@@ -91,19 +94,19 @@ percentiles = {
 labels = [
     ("T-FOMM (0 pctl)", (-0.5, 0, "right", "center", True)),
     ("T-FOMM (50 pctl)", (-0.0, 0.8, "center", "bottom", False)),
-    ("T-FOMM (DA, daysOfWeek)", (0.01, 0.7, "right", "center", False)),
-    ("FOMM", (-0.1, -0.1, "right", "center", False)),
+    ("T-FOMM (DA, daysOfWeek)", (0.06, 0.7, "right", "center", False)),
+    ("FOMM", (-0.1, -1, "right", "center", False)),
     ("T-FOMM (HWES, node)", (0.05, 0, "left", "center", False)),
-    ("T-FOMM\n(HWES, discretization)", (0.11, 0.5, "center", "bottom", False)),
-    ("T-FOMM (HWES, user)", (1, -10, "center", "top", True)),
+    ("T-FOMM\n(HWES, discretization)", (0.15, -0.5, "center", "top", False)),
+    ("T-FOMM (HWES, user)", (-2, 0, "right", "center", True)),
     ("T-FOMM (100 pctl)", (-1, 0, "right", "center", True)),
-    ("VOMM", (1, 0, "left", "center", True)),
-    ("Keep-on-closest", (1, 0, "left", "center", True)),
-    ("T-FOMM (DA, months)", (0, -0.7, "left", "center", False)),
-    ("T-FOMM (DA, hours)", (-0.01, 0.4, "right", "center", False)),
-    ("T-FOMM (DA, daysOfWeek, 50 pctl)", (-0.01, 0.9, "right", "center", False)),
-    ("T-FOMM (DA, hours, 50 pctl)", (-0.1, 0.5, "right", "bottom", False)),
-    ("T-FOMM (DA, months, 50 pctl)", (-0.07, -0.5, "left", "top", False)),
+    ("VOMM", (-0.4, 5, "center", "bottom", True)),
+    ("Keep-on-\nclosest", (0.4, 5, "center", "bottom", True)),
+    ("T-FOMM (DA, months)", (-0.02, -2.5, "left", "center", False)),
+    ("T-FOMM (DA, hours)", (0.005, 0.4, "right", "center", False)),
+    ("T-FOMM (DA, daysOfWeek, 50 pctl)", (0.06, 0.9, "right", "center", False)),
+    ("T-FOMM (DA, hours, 50 pctl)", (-0.05, 0.5, "right", "bottom", False)),
+    ("T-FOMM (DA, months, 50 pctl)", (-0.17, -1.6, "left", "top", False)),
 ]
 
 Xs = availability
@@ -121,7 +124,7 @@ for pair in sorted_list[1:]:
         pareto_front.append(pair)
 
 
-f1, a1 = plt.subplots(figsize=(4.5, 3))
+f1, a1 = plt.subplots(figsize=(4.5, 4.5))
 
 a1.scatter(Xs, Ys)
 
@@ -150,7 +153,7 @@ a1.plot(percentiles["availability"], percentiles["excess_data"], color="red", ls
 a1.plot(pf_X, pf_Y)
 
 a1.set(xlabel="% Availability", ylabel="% Excess Data")
-f1.savefig("./figures/pareto.pdf", bbox_inches="tight")
+# f1.savefig("./figures/pareto.pdf", bbox_inches="tight")
 
 
 sorted_list = sorted(
@@ -162,7 +165,22 @@ for pair in sorted_list[1:]:
     if pair[1] >= pareto_front[-1][1]:
         pareto_front.append(pair)
 
-f2, a2 = plt.subplots(figsize=(4.5, 3))
+# f2, a2 = plt.subplots(figsize=(4.5, 3))
+a2 = inset_axes(
+    a1,
+    width="83%",  # width = 30% of parent_bbox
+    height="60%",  # height : 1 inch
+    # loc="lower right",
+    # borderpad=2,
+    bbox_to_anchor=(0.0, -0.35, 1, 1),
+    bbox_transform=a1.transAxes,
+)
+
+a1.add_patch(
+    plt.Rectangle((72, 61), 2, 7, ls="--", lw=1, ec="black", fc="none"),
+)
+
+a1.plot([73, 74], [61, 45], ls="--", lw=1, color="black"),
 
 a2.scatter(Xs, Ys)
 
@@ -190,12 +208,19 @@ a2.plot(percentiles["availability"], percentiles["excess_data"], color="red", ls
 
 a2.plot(pf_X, pf_Y)
 
-a2.set(xlabel="% Availability", ylabel="% Excess Data")
+# a2.set(xlabel="% Availability", ylabel="% Excess Data")
 a2.set_xlim(72.5, 73.5)
 a2.set_ylim(61, 68)
+a2.tick_params(labelleft=False, labelbottom=False)
 
-f2.savefig("./figures/pareto-zoomed.pdf", bbox_inches="tight")
 
+# f = "./glass.pdf"
+# logo = mpimg.imread(f)
+# imagebox = OffsetImage(logo, zoom=0.1)
+# ab = AnnotationBbox(imagebox, (5, 700), frameon=False)
+# a1.add_artist(ab)
+
+f1.savefig("./figures/pareto-zoomed-2.pdf", bbox_inches="tight")
 
 # plt.show()
 
